@@ -1,3 +1,6 @@
+// Define game state variables
+let gameStarted = false;
+
 //board
 let board;
 let boardWidth = 360;
@@ -35,14 +38,14 @@ let gravity = 0.4;
 
 let gameOver = false;
 let score = 0;
+let highScore = localStorage.getItem("flappybird_highscore") || 0; // Retrieve high score from local storage
 
 window.onload = function () {
     board = document.getElementById("board");
     board.height = boardHeight;
     board.width = boardWidth;
-    context = board.getContext("2d"); //used for drawing on the board
+    context = board.getContext("2d");
 
-    //load images
     birdImg = new Image();
     birdImg.src = "./flappybird.png";
     birdImg.onload = function () {
@@ -56,10 +59,12 @@ window.onload = function () {
     bottomPipeImg.src = "./bottompipe.png";
 
     requestAnimationFrame(update);
-    setInterval(placePipes, 1500); //every 1.5 seconds
-    document.addEventListener("keydown", moveBird);
-    // Add touch event listeners
-    board.addEventListener("touchstart", jumpBird);
+    setInterval(placePipes, 1500);
+
+    // Event listeners for tap-to-start and restart
+    document.addEventListener("keydown", handleKeyPress);
+    board.addEventListener("touchstart", handleTap);
+    board.addEventListener("click", handleRestart);
 }
 
 function update() {
@@ -69,54 +74,62 @@ function update() {
     }
     context.clearRect(0, 0, board.width, board.height);
 
-    //bird
-    velocityY += gravity;
-    bird.y = Math.max(bird.y + velocityY, 0); //apply gravity to current bird.y, limit the bird.y to top of the canvas
-    context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+    if (gameStarted) {
+        velocityY += gravity;
+        bird.y = Math.max(bird.y + velocityY, 0);
+        context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
-    if (bird.y > board.height) {
-        gameOver = true;
-    }
-
-    //pipes
-    for (let i = 0; i < pipeArray.length; i++) {
-        let pipe = pipeArray[i];
-        pipe.x += velocityX;
-        context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
-
-        if (!pipe.passed && bird.x > pipe.x + pipe.width) {
-            score += 0.5; //0.5 because there are 2 pipes! so 0.5*2 = 1, 1 for each set of pipes
-            pipe.passed = true;
+        if (bird.y > board.height) {
+            endGame();
         }
 
-        if (detectCollision(bird, pipe)) {
-            gameOver = true;
+        for (let i = 0; i < pipeArray.length; i++) {
+            let pipe = pipeArray[i];
+            pipe.x += velocityX;
+            context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
+
+            if (!pipe.passed && bird.x > pipe.x + pipe.width) {
+                score += 0.5;
+                pipe.passed = true;
+            }
+
+            if (detectCollision(bird, pipe)) {
+                endGame();
+            }
         }
-    }
 
-    //clear pipes
-    while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
-        pipeArray.shift(); //removes first element from the array
-    }
+        while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
+            pipeArray.shift();
+        }
 
-    //score
-    context.fillStyle = "white";
-    context.font = "45px sans-serif";
-    context.fillText(score, 5, 45);
+        context.fillStyle = "white";
+        context.font = "30px sans-serif";
+        context.fillText("Score: " + score, 5, 35);
+        
+        // Display highest score
+        context.fillText("Highest Score: " + highScore, 5, 70);
 
-    if (gameOver) {
-        context.fillText("GAME OVER", 5, 90);
+        if (gameOver) {
+            updateHighScore(); // Update high score
+            context.fillText("GAME OVER", 100, 200);
+            context.fillText("Score: " + score, 100, 240);
+            context.fillText("Highest Score: " + highScore, 100, 280);
+            context.fillText("Tap to restart", 100, 320);
+        }
+    } else {
+        context.fillStyle = "white";
+        context.font = "30px sans-serif";
+        context.fillText("Tap to start", 5, 90);
+        // Display highest score
+        context.fillText("Highest Score: " + highScore, 5, 125);
     }
 }
 
 function placePipes() {
-    if (gameOver) {
+    if (gameOver || !gameStarted) {
         return;
     }
 
-    //(0-1) * pipeHeight/2.
-    // 0 -> -128 (pipeHeight/4)
-    // 1 -> -128 - 256 (pipeHeight/4 - pipeHeight/2) = -3/4 pipeHeight
     let randomPipeY = pipeY - pipeHeight / 4 - Math.random() * (pipeHeight / 2);
     let openingSpace = board.height / 4;
 
@@ -141,32 +154,60 @@ function placePipes() {
     pipeArray.push(bottomPipe);
 }
 
-function moveBird(e) {
-    if (e.code == "Space" || e.code == "ArrowUp" || e.code == "KeyX") {
+function handleKeyPress(e) {
+    if ((e.code == "Space" || e.code == "ArrowUp" || e.code == "KeyX") && gameStarted) {
+        jump();
+    } else if (!gameStarted) {
+        startGame();
+    }
+}
+
+function handleTap() {
+    if (!gameStarted) {
+        startGame();
+    } else {
         jump();
     }
 }
 
-// Function to handle bird jump
 function jump() {
     velocityY = -6;
-    // Reset game if game over
+}
+
+function handleRestart() {
     if (gameOver) {
-        bird.y = birdY;
-        pipeArray = [];
-        score = 0;
-        gameOver = false;
+        resetGame();
     }
 }
 
-// Function to handle touch for bird jump
-function jumpBird() {
-    jump();
+function startGame() {
+    gameStarted = true;
+    velocityY = -6;
+}
+
+function endGame() {
+    gameOver = true;
+}
+
+function resetGame() {
+    bird.y = birdY;
+    pipeArray = [];
+    score = 0;
+    gameOver = false;
+    gameStarted = false;
 }
 
 function detectCollision(a, b) {
-    return a.x < b.x + b.width && //a's top left corner doesn't reach b's top right corner
-        a.x + a.width > b.x && //a's top right corner passes b's top left corner
-        a.y < b.y + b.height && //a's top left corner doesn't reach b's bottom left corner
-        a.y + a.height > b.y; //a's bottom left corner passes b's top left corner
+    return a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y;
+}
+
+// Function to update the high score
+function updateHighScore() {
+    if (score > highScore) {
+        highestScore = score;
+        localStorage.setItem("flappybird_highestscore", highestScore);
+    }
 }
