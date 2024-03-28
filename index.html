@@ -2,16 +2,20 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flappy Bird</title>
     <link rel="stylesheet" href="flappybird.css">
     <script src="flappybird.js"></script>
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto; /* Center the canvas horizontally */
+            max-width: 100%; /* Ensure canvas doesn't exceed viewport width */
+            height: auto; /* Let height adjust according to aspect ratio */
+        }
+    </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="game-canvas" width="400" height="600"></canvas>
-        <div id="score">Score: 0</div>
-        <div id="game-over">Game Over</div>
-    </div>
+    <canvas id="board"></canvas>
 </body>
 </html>
