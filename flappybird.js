@@ -4,7 +4,6 @@ let boardWidth = 360;
 let boardHeight = 640;
 let context;
 
-
 //bird
 let birdWidth = 34; //width/height ratio = 408/228 = 17/12
 let birdHeight = 24;
@@ -43,10 +42,6 @@ window.onload = function () {
     board.width = boardWidth;
     context = board.getContext("2d"); //used for drawing on the board
 
-    //draw flappy bird
-    // context.fillStyle = "green";
-    // context.fillRect(bird.x, bird.y, bird.width, bird.height);
-
     //load images
     birdImg = new Image();
     birdImg.src = "./flappybird.png";
@@ -62,10 +57,9 @@ window.onload = function () {
 
     requestAnimationFrame(update);
     setInterval(placePipes, 1500); //every 1.5 seconds
-
-    // Event listeners for both keyboard and touch input
     document.addEventListener("keydown", moveBird);
-    board.addEventListener("touchstart", touchHandler);
+    // Add touch event listeners
+    board.addEventListener("touchstart", jumpBird);
 }
 
 function update() {
@@ -77,7 +71,6 @@ function update() {
 
     //bird
     velocityY += gravity;
-    // bird.y += velocityY;
     bird.y = Math.max(bird.y + velocityY, 0); //apply gravity to current bird.y, limit the bird.y to top of the canvas
     context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
@@ -150,24 +143,14 @@ function placePipes() {
 
 function moveBird(e) {
     if (e.code == "Space" || e.code == "ArrowUp" || e.code == "KeyX") {
-        //jump
-        velocityY = -6;
-
-        //reset game
-        if (gameOver) {
-            bird.y = birdY;
-            pipeArray = [];
-            score = 0;
-            gameOver = false;
-        }
+        jump();
     }
 }
 
-function touchHandler(e) {
-    //jump
+// Function to handle bird jump
+function jump() {
     velocityY = -6;
-
-    //reset game
+    // Reset game if game over
     if (gameOver) {
         bird.y = birdY;
         pipeArray = [];
@@ -176,9 +159,14 @@ function touchHandler(e) {
     }
 }
 
+// Function to handle touch for bird jump
+function jumpBird() {
+    jump();
+}
+
 function detectCollision(a, b) {
-    return a.x < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
-        a.x + a.width > b.x &&   //a's top right corner passes b's top left corner
-        a.y < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
-        a.y + a.height > b.y;    //a's bottom left corner passes b's top left corner
-}0
+    return a.x < b.x + b.width && //a's top left corner doesn't reach b's top right corner
+        a.x + a.width > b.x && //a's top right corner passes b's top left corner
+        a.y < b.y + b.height && //a's top left corner doesn't reach b's bottom left corner
+        a.y + a.height > b.y; //a's bottom left corner passes b's top left corner
+}
