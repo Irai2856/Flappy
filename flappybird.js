@@ -102,28 +102,40 @@ function update() {
             pipeArray.shift();
         }
 
-        context.fillStyle = "white";
-        context.font = "30px sans-serif";
-        context.fillText("Score: " + score, 5, 35);
+        context.fillStyle = "black"; // Set text color to black
+        context.font = "bold 20px sans-serif"; // Adjusted font size and bold font
+        context.textAlign = "center";
+        context.fillText("Score: " + score, boardWidth / 2, 25); // Adjusted vertical position
         
-        // Display highest score
-        context.fillText("Highest Score: " + highScore, 5, 70);
-
+        // Display highest score under the current score
+        context.fillText("High Score: " + highScore, boardWidth / 2, 55); // Adjusted vertical position
+        
         if (gameOver) {
-            updateHighScore(); // Update high score
-            context.fillText("GAME OVER", 100, 200);
-            context.fillText("Score: " + score, 100, 240);
-            context.fillText("Highest Score: " + highScore, 100, 280);
-            context.fillText("Tap to restart", 100, 320);
+            // Sky blue frame background covering the text
+            context.fillStyle = "skyblue";
+            context.fillRect(boardWidth / 2 - 150, 150, 300, 160); // Adjusted height
+            
+            // "Game Over" message
+            context.fillStyle = "red"; // Set text color to red for "Game Over"
+            context.font = "bold 24px sans-serif"; // Adjusted font size for "Game Over" and bold font
+            context.fillText("Game Over", boardWidth / 2, 180); // Adjusted vertical position
+            
+            context.fillStyle = "black"; // Reset text color to black
+            context.font = "bold 20px sans-serif"; // Reset font size and bold font
+            context.fillText("Quest 1 Completed", boardWidth / 2, 220); // Adjusted vertical position
+            context.fillText("Now you can look for Quest 2", boardWidth / 2, 260); // Adjusted vertical position
+            context.fillText("Tap to Restart", boardWidth / 2, 300); // Adjusted vertical position
         }
     } else {
-        context.fillStyle = "white";
-        context.font = "30px sans-serif";
-        context.fillText("Tap to start", 5, 90);
+        context.fillStyle = "black"; // Set text color to black
+        context.font = "bold 20px sans-serif"; // Adjusted font size and bold font
+        context.textAlign = "center";
+        context.fillText("Tap to start", boardWidth / 2, 70); // Adjusted vertical position
         // Display highest score
-        context.fillText("Highest Score: " + highScore, 5, 125);
+        context.fillText("High Score: " + highScore, boardWidth / 2, 105); // Adjusted vertical position
     }
 }
+
 
 function placePipes() {
     if (gameOver || !gameStarted) {
@@ -206,8 +218,31 @@ function detectCollision(a, b) {
 
 // Function to update the high score
 function updateHighScore() {
-    if (score > highScore) {
-        highestScore = score;
-        localStorage.setItem("flappybird_highestscore", highestScore);
+    try {
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("flappybird_highscore", highScore);
+        }
+    } catch (error) {
+        // Handle errors related to local storage access
+        console.error("Error updating high score:", error);
+        // Fallback: Use cookies or other storage mechanism
+        document.cookie = "flappybird_highscore=" + highScore + ";expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/";
     }
 }
+
+// Function to retrieve the high score with error handling
+function getHighScore() {
+    let storedHighScore = 0;
+    try {
+        storedHighScore = parseInt(localStorage.getItem("flappybird_highscore")) || 0;
+    } catch (error) {
+        // Handle errors related to local storage access
+        console.error("Error retrieving high score:", error);
+        // Fallback: Try to retrieve high score from cookies or other storage mechanism
+        let cookie = document.cookie.match('(^|[^;]+)\\s*flappybird_highscore\\s*=\\s*([^;]+)');
+        storedHighScore = cookie ? parseInt(cookie.pop()) : 0;
+    }
+    return storedHighScore; // Return the retrieved high score
+}
+
